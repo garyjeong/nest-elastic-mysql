@@ -12,7 +12,6 @@ services:
     ports: 
       - "33006:3306"
 
-
   elasticsearch:
     container_name: elasticsearch
     hostname: elasticsearch
@@ -37,7 +36,6 @@ services:
       discovery.type: single-node
     networks:
       - elk
-
 
   logstash:
     container_name: logstash
@@ -68,7 +66,6 @@ services:
       - elasticsearch  
     networks:
       - elk
-
 
   kibana:
     container_name: kibana
