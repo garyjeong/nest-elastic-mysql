@@ -1,0 +1,97 @@
+version: '3.7'
+
+services:
+  database:
+    container_name: mysql
+    image: mysql:latest
+    restart: always 
+    environment:
+      - MYSQL_DATABASE=test
+      - MYSQL_ROOT_PASSWORD=wjdwhdans
+      - TZ=Asia/Seoul
+    ports: 
+      - "33006:3306"
+
+
+  elasticsearch:
+    container_name: elasticsearch
+    hostname: elasticsearch
+    restart: always
+    build:
+      context: docker_compose/elasticsearch/
+      args:
+        ELK_VERSION: 7.16.2
+    volumes:
+      - type: bind
+        source: docker_compose/elasticsearch/config/elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+        read_only: true
+      - type: volume
+        source: elasticsearch
+        target: /usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      discovery.type: single-node
+    networks:
+      - elk
+
+
+  logstash:
+    container_name: logstash
+    hostname: logstash
+    restart: always
+    build:
+      context: docker_compose/logstash/
+      args:
+        ELK_VERSION: 7.16.2
+    volumes:
+      - type: bind
+        source: docker_compose/logstash/config/logstash.yml
+        target: /usr/share/logstash/config/logstash.yml
+        read_only: false
+      - type: bind
+        source: docker_compose/logstash/pipeline
+        target: /usr/share/logstash/pipeline
+        read_only: false
+      - type: bind
+        source: docker_compose/logstash/config/pipelines.yml
+        target: /usr/share/config/pipelines.yml
+        read_only: false
+    ports:
+      - '9600:9600'
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    depends_on:
+      - elasticsearch  
+    networks:
+      - elk
+
+
+  kibana:
+    container_name: kibana
+    hostname: kibana
+    restart: always
+    build:
+      context: docker_compose/kibana/
+      args:
+        ELK_VERSION: 7.16.2
+    volumes:
+      - type: bind
+        source: docker_compose/kibana/config/kibana.yml
+        target: /usr/share/kibana/config/kibana.yml
+        read_only: false
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch  
+    networks:
+      - elk
+
+volumes:
+  elasticsearch:
+
+networks:
+  elk:
